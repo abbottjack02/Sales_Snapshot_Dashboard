@@ -11,6 +11,8 @@ npm run dev
 
 Then open the printed local URL in your browser. Drag a Square "Sales Summary" CSV onto the drop zone (or use the browse button) to generate per-day metrics and interpretation signals.
 
+Want to see it without an export handy? Click **Load sample data** in the app header and explore the derived metrics immediately.
+
 ## What it does
 
 - Heuristically detects date and numeric metric columns in Square CSV exports

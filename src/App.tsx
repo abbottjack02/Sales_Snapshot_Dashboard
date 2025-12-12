@@ -44,6 +44,7 @@ function parseNumber(raw: string | number | undefined): number {
   const value = raw.trim();
   if (!value) return 0;
 
+  const isParenNegative = /^\(.*\)$/.test(value);
   const normalized = value
     .replace(/[$,\s]/g, '')
     .replace(/[()]/g, '')
@@ -51,7 +52,8 @@ function parseNumber(raw: string | number | undefined): number {
     .replace(/\u00a0/g, '');
 
   const parsed = Number.parseFloat(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
+  if (!Number.isFinite(parsed)) return 0;
+  return isParenNegative ? -parsed : parsed;
 }
 
 function tryParseDate(raw: string | undefined): string | null {
@@ -337,21 +339,32 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
 
+  const parseCsvText = useCallback((text: string) => {
+    const parsed = Papa.parse<RawRow>(text, { header: true, skipEmptyLines: true });
+    if (parsed.errors.length) {
+      throw new Error(parsed.errors[0].message);
+    }
+    return parsed.data.filter((row) => Object.keys(row).length > 0);
+  }, []);
+
+  const loadRows = useCallback(
+    (rows: RawRow[]) => {
+      const { daily: aggregated, summary: builtSummary } = aggregate(rows);
+      setDaily(aggregated);
+      setSummary(builtSummary);
+      setError(null);
+    },
+    [],
+  );
+
   const handleFiles = useCallback(async (files: FileList) => {
     const file = files[0];
     if (!file) return;
     setFileName(file.name);
     try {
       const text = await file.text();
-      const parsed = Papa.parse<RawRow>(text, { header: true, skipEmptyLines: true });
-      if (parsed.errors.length) {
-        throw new Error(parsed.errors[0].message);
-      }
-      const rows = parsed.data.filter((row) => Object.keys(row).length > 0);
-      const { daily: aggregated, summary: builtSummary } = aggregate(rows);
-      setDaily(aggregated);
-      setSummary(builtSummary);
-      setError(null);
+      const rows = parseCsvText(text);
+      loadRows(rows);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to parse CSV.';
       setError(message);
@@ -367,14 +380,32 @@ export default function App() {
     return `${start} → ${end}`;
   }, [daily]);
 
+  const handleSample = useCallback(() => {
+    const sampleCsv = `Date,Gross Sales,Net Sales,Discounts,Tips,Transactions\n2024-06-01,$1240.50,$1050.00,$85.00,$105.50,42\n2024-06-02,$1480.25,$1270.75,$130.00,$130.00,48\n2024-06-03,$1320.00,$1140.50,$95.00,$115.50,45`;
+    try {
+      const rows = parseCsvText(sampleCsv);
+      loadRows(rows);
+      setFileName('Sample data');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to load sample data.';
+      setError(message);
+    }
+  }, [loadRows, parseCsvText]);
+
   return (
     <div className="app-shell">
       <header>
         <h1>Sales Snapshot</h1>
         <p className="subtitle">Client-only diagnostics for Square “Sales Summary” exports.</p>
+        <p className="helper">Drop a CSV or use the sample data to see how per-day metrics and signals are derived.</p>
       </header>
 
-      <DropZone onFiles={handleFiles} />
+      <div className="upload-row">
+        <DropZone onFiles={handleFiles} />
+        <button className="sample" type="button" onClick={handleSample}>
+          Load sample data
+        </button>
+      </div>
 
       {fileName && (
         <p className="subtitle" style={{ marginTop: '0.5rem' }}>

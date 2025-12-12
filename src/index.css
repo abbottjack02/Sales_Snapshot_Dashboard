@@ -42,6 +42,11 @@ p.subtitle {
   color: #475569;
 }
 
+p.helper {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+}
+
 .drop-area {
   border: 2px dashed #cbd5e1;
   padding: 1.5rem;
@@ -50,6 +55,19 @@ p.subtitle {
   transition: border-color 150ms ease, background-color 150ms ease;
   text-align: center;
   color: #475569;
+}
+
+.upload-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+@media (max-width: 720px) {
+  .upload-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .drop-area.dragging {
@@ -71,6 +89,22 @@ button.browse {
   cursor: pointer;
   font-weight: 600;
   margin-top: 0.5rem;
+}
+
+button.sample {
+  border: 1px dashed #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 1rem 1.1rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+button.sample:hover {
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
 }
 
 .grid {
